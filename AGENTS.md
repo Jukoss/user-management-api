@@ -87,14 +87,22 @@ Open style nit: only one blank line before `@app.get("/users")` (PEP 8 expects t
 
 ### Day 2 — in progress
 
+Completed:
+- `UserCreate(BaseModel)` with `model_config = ConfigDict(str_strip_whitespace=True)`, `name: str = Field(min_length=1, max_length=50)`, `email: EmailStr`.
+- `POST /users` (`status_code=status.HTTP_201_CREATED`): body parameter `user_data: UserCreate`, id generated as `max((u["id"] for u in users), default=0) + 1`, stored as `{"id": ..., **user_data.model_dump()}`.
+- Git: initial commit made by the mentor (`.idea/` added to `.gitignore`); from now on the student commits after each finished step.
+
+Concepts covered: request body vs path/query params (read `loc` in 422 errors), `BaseModel` as TS interface + zod, parameter name vs type hint, function redefinition shadowing, keeping list items a single shape (dict, not model), `model_dump()` and `**` unpacking, `.dict()` deprecated in Pydantic v2, id generation pitfalls (`len()` off-by-one and reuse after delete, mixed int/UUID types, empty `max()`), generator expressions and parenthesizing them with extra args, `default=` in `max()`, 200 vs 201 vs 204, `EmailStr` (domain lowercased, local part kept — relevant for future duplicate-email checks), `Field` constraints, `str_strip_whitespace` (Pydantic v2 `Field` has no `strip_whitespace`).
+
+Open question for Day 3: deleting the user with the max id lets `max()+1` reuse that id; compare with PostgreSQL sequences.
+
 Not yet done:
-- Pydantic request schema and `POST /users`.
 - `PUT /users/{user_id}`.
-- Response models and request validation details.
+- Response models.
 
 ## Next task
 
-Day 2, step 1: introduce Pydantic `BaseModel` and have the student write a `UserCreate` schema and a `POST /users` endpoint that appends a new user to the in-memory list and returns it.
+Day 2, step 2: `PUT /users/{user_id}` — combine a path parameter, a body model, and 404 handling; discuss PUT vs PATCH.
 
 Proceed one step at a time and wait for the student's response before continuing.
 
