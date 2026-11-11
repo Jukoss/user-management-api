@@ -1,5 +1,10 @@
 from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from sqlalchemy.orm import Session
+from sqlalchemy import select
+
+from user_management_api.database import engine
+from user_management_api.models import User
 
 app = FastAPI()
 
@@ -21,7 +26,9 @@ class UserRead(UserCreate):
 
 @app.get("/users")
 def get_users() -> list[UserRead]:
-    return users
+    with Session(engine) as session:
+        users = session.scalars(select(User)).all()
+        return users
 
 
 @app.get("/users/{user_id}")
@@ -34,12 +41,12 @@ def get_user(user_id: int) -> UserRead:
 
 @app.post("/users", status_code=status.HTTP_201_CREATED)
 def create_user(user_data: UserCreate) -> UserRead:
-    user = {
-        "id": max((u["id"] for u in users), default=0) + 1,
-        **user_data.model_dump(),
-    }
-    users.append(user)
-    return user
+    with Session(engine) as session:
+        user = User(**user_data.model_dump())
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        return user
 
 
 @app.put("/users/{user_id}")
