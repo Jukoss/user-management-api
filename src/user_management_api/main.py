@@ -15,13 +15,17 @@ class UserCreate(BaseModel):
     email: EmailStr
 
 
+class UserRead(UserCreate):
+    id: int
+
+
 @app.get("/users")
-def get_users():
+def get_users() -> list[UserRead]:
     return users
 
 
 @app.get("/users/{user_id}")
-def get_user(user_id: int):
+def get_user(user_id: int) -> UserRead:
     for user in users:
         if user["id"] == user_id:
             return user
@@ -29,7 +33,7 @@ def get_user(user_id: int):
 
 
 @app.post("/users", status_code=status.HTTP_201_CREATED)
-def create_user(user_data: UserCreate):
+def create_user(user_data: UserCreate) -> UserRead:
     user = {
         "id": max((u["id"] for u in users), default=0) + 1,
         **user_data.model_dump(),
@@ -39,7 +43,7 @@ def create_user(user_data: UserCreate):
 
 
 @app.put("/users/{user_id}")
-def update_user(user_id: int, user_data: UserCreate):
+def update_user(user_id: int, user_data: UserCreate) -> UserRead:
     for user in users:
         if user["id"] == user_id:
             user.update(user_data.model_dump())

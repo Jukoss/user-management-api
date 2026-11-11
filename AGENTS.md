@@ -68,7 +68,7 @@ When reviewing code:
 
 ## Current progress
 
-Day 1 is completed. Day 2 is in progress.
+Days 1–2 are completed. Day 3 is in progress.
 
 ### Day 1 — completed
 
@@ -85,7 +85,7 @@ Concepts covered: `def` and indentation (`IndentationError`), decorators as rout
 
 Open style nit: only one blank line before `@app.get("/users")` (PEP 8 expects two).
 
-### Day 2 — in progress
+### Day 2 — completed
 
 Completed:
 - `UserCreate(BaseModel)` with `model_config = ConfigDict(str_strip_whitespace=True)`, `name: str = Field(min_length=1, max_length=50)`, `email: EmailStr`.
@@ -96,13 +96,29 @@ Concepts covered: request body vs path/query params (read `loc` in 422 errors), 
 
 Open question for Day 3: deleting the user with the max id lets `max()+1` reuse that id; compare with PostgreSQL sequences.
 
+- `PUT /users/{user_id}`: path param + `user_data: UserCreate` body (model reused, so all validation applies), loop lookup, `user.update(**user_data.model_dump())`, 404 via `HTTPException`. Extra `id` in body is ignored by Pydantic, so `id` can't be changed.
+
+More concepts covered: `return` indentation inside `for` vs `if` (returned first user for any id), reassignment vs mutation (`user = {...}` doesn't change the list item; `user.update(...)` does), PUT (full replace, all fields required) vs PATCH (partial; needs a model with optional `None` fields and `model_dump(exclude_unset=True)` — not implemented yet).
+
+- Response models: `class UserRead(UserCreate): id: int`; return annotations on all endpoints (`-> list[UserRead]`, `-> UserRead`). Verified that extra fields (e.g. `password_hash`) are filtered out and Swagger shows `UserRead` schemas.
+
+More concepts covered: return type annotations as response models (output filtering = whitelist), `list[T]`, class inheritance; inherited fields come first in JSON; response models also validate output (invalid stored email → 500 for the whole list); `UserBase` / `UserCreate` / `UserRead` pattern discussed — plan to split models when they diverge (e.g. `password` only on create).
+
+Skipped: `PATCH /users/{user_id}`.
+Open style nit: one blank line between `UserCreate` and `UserRead` (PEP 8 expects two).
+
+### Day 3 — in progress
+
+Environment: Docker 25 is installed but the daemon was not running; no local PostgreSQL / `psql`; Homebrew is available.
+
 Not yet done:
-- `PUT /users/{user_id}`.
-- Response models.
+- Running PostgreSQL locally.
+- Installing SQLAlchemy and a PostgreSQL driver.
+- SQLAlchemy model, engine/session, replacing the in-memory `users` list.
 
 ## Next task
 
-Day 2, step 2: `PUT /users/{user_id}` — combine a path parameter, a body model, and 404 handling; discuss PUT vs PATCH.
+Day 3, step 1: get PostgreSQL running locally (recommended: a single `docker run` container, explained briefly; Docker in depth is Day 6) and connect to it to verify.
 
 Proceed one step at a time and wait for the student's response before continuing.
 
