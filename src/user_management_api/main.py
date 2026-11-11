@@ -38,3 +38,13 @@ def create_user(user_data: UserCreate):
     return user
 
 
+@app.put("/users/{user_id}")
+def update_user(user_id: int, user_data: UserCreate):
+    for user in users:
+        if user["id"] == user_id:
+            user.update(user_data.model_dump())
+            return user
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+
