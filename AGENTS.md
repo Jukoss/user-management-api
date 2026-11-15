@@ -68,7 +68,7 @@ When reviewing code:
 
 ## Current progress
 
-Days 1–2 are completed. Day 3 is in progress.
+Days 1–3 are completed. Day 4 is in progress.
 
 ### Day 1 — completed
 
@@ -107,18 +107,28 @@ More concepts covered: return type annotations as response models (output filter
 Skipped: `PATCH /users/{user_id}`.
 Open style nit: one blank line between `UserCreate` and `UserRead` (PEP 8 expects two).
 
-### Day 3 — in progress
+### Day 3 — completed
 
-Environment: Docker 25 is installed but the daemon was not running; no local PostgreSQL / `psql`; Homebrew is available.
+- PostgreSQL 17 in Docker: container `users-db` (`POSTGRES_USER=app`, `POSTGRES_PASSWORD=app`, `POSTGRES_DB=users`, port 5432). Inspect with `docker exec -it users-db psql -U app -d users` (`\dt`, `\d users`).
+- Dependencies: `sqlalchemy`, `psycopg[binary]`.
+- `database.py`: hardcoded `DATABASE_URL = "postgresql+psycopg://app:app@localhost:5432/users"` (move to env vars on Day 6), module-level `engine = create_engine(...)`.
+- `models.py`: `Base(DeclarativeBase)`, `User` (`__tablename__ = "users"`, `id` primary key → sequence, `name` `String(50)`, `email` `String(254)` unique). Table created with `Base.metadata.create_all(engine)`; no Alembic yet.
+- `main.py`: all four endpoints use `with Session(engine) as session:` — `select(User)` + `scalars().all()`, `session.get(User, id)` + `is None` → 404, `add` / `commit` / `refresh`, PUT via `setattr` over `model_dump().items()`; `IntegrityError` → `rollback()` → 409 "Email already registered"; in-memory list removed.
+- `UserCreate` has `@field_validator("email") @classmethod normalize_email` → `v.lower()`.
+
+Concepts covered: driver vs ORM, connection URL, engine as a connection pool (why one per app; PHP request-per-process vs long-lived Python server), `with` blocks, `text()`, unassigned `create_engine` result, `create_all` doesn't alter existing tables (dropped and recreated the table manually → why migrations exist), Pydantic vs ORM models, sequences (`nextval`, ids never reused, gaps even after rollback, safe under concurrency), unique constraint = index, `DetachedInstanceError` after commit (expire on commit + session closed before FastAPI serializes → `refresh`), Session as git staging/commit, transactions, iterating a dict yields keys (`.items()`), `try`/`except` a specific exception, 409 vs 422, `cls` vs value in validators, immutable strings, `after`-mode validators, case-insensitive uniqueness at DB level (`lower(email)` index or `citext`, not implemented).
+
+Open nits: `models.py` has one blank line between imports and `class Base`; multi-line `HTTPException(...)` calls have no trailing comma.
+
+### Day 4 — in progress
 
 Not yet done:
-- Running PostgreSQL locally.
-- Installing SQLAlchemy and a PostgreSQL driver.
-- SQLAlchemy model, engine/session, replacing the in-memory `users` list.
+- Split `main.py` into layers (schemas, routes/`APIRouter`, service, repository).
+- Session via FastAPI dependency injection (`Depends`, `yield`).
 
 ## Next task
 
-Day 3, step 1: get PostgreSQL running locally (recommended: a single `docker run` container, explained briefly; Docker in depth is Day 6) and connect to it to verify.
+Day 4, step 1: move the Pydantic schemas to `schemas.py`, then introduce `get_session` with `yield` + `Depends` to remove `with Session(engine)` duplication.
 
 Proceed one step at a time and wait for the student's response before continuing.
 
