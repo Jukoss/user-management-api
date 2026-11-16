@@ -68,7 +68,7 @@ When reviewing code:
 
 ## Current progress
 
-Days 1–3 are completed. Day 4 is in progress.
+Days 1–4 are completed. Day 5 is in progress.
 
 ### Day 1 — completed
 
@@ -120,15 +120,35 @@ Concepts covered: driver vs ORM, connection URL, engine as a connection pool (wh
 
 Open nits: `models.py` has one blank line between imports and `class Base`; multi-line `HTTPException(...)` calls have no trailing comma.
 
-### Day 4 — in progress
+### Day 4 — completed
+
+Project structure (`src/user_management_api/`):
+- `main.py` — `app = FastAPI()` + `app.include_router(router)` only.
+- `schemas.py` — `UserCreate`, `UserRead`.
+- `database.py` — `engine`, `get_session()` (`with Session(engine) as session: yield session`), `SessionDep = Annotated[Session, Depends(get_session)]`.
+- `models.py` — ORM `User`.
+- `repository.py` — `list_users`, `get_user_by_id` (`User | None`), `create_new_user(session, user_data)`, `update_user_by_id(session, user, user_data)`, `delete_user_by_id(session, user)`; only session/SQL, no HTTP.
+- `service.py` — `UserNotFoundError`, `EmailAlreadyExistsError`; `list_users`, `get_user` (raises not found), `create_user` / `update_user` (catch `IntegrityError` → `rollback` → `raise EmailAlreadyExistsError() from e`), `delete_user`; uses `from user_management_api import repository`.
+- `routes.py` — `APIRouter(prefix="/users", tags=["users"])`, imports `service` as a module, maps domain errors to 404/409; `DELETE /users/{user_id}` returns 204 (written by the student independently as practice).
+
+Concepts covered: modules/imports, Single Responsibility, DI (`Depends`, compared with Angular DI: resolved by function not type token, per-request lifetime, cached within a request, overridable in tests), generators/`yield` dependencies, `Depends` must be in the signature, `Annotated` aliases, `APIRouter` prefix/tags, `""` vs `"/"` and FastAPI's 307 trailing-slash redirects, layer boundaries (repository must not raise `HTTPException`; route must not build ORM objects or call `rollback`), union return types only when `None` is possible, custom exceptions, exception propagation, `raise ... from e`, multiple `except` blocks, name shadowing → infinite recursion, empty list is `200 []` not 404, 204 for DELETE.
+
+The student found the layering hard to keep in mind at first; useful framing: routes speak HTTP, service speaks business, repository speaks database. Same function names across layers were confusing — renaming per layer (`read_user` / `get_user` / `get_by_id`) was suggested but not done.
+
+Workflow: the student commits after each finished step; the mentor provides a ready commit message and command (`FastAPI project - ...` style).
+
+Open nit: one blank line before `def delete_user` in `service.py`; one `IntegrityError` is assumed to always mean duplicate email (true only while email is the only constraint).
+
+### Day 5 — in progress
 
 Not yet done:
-- Split `main.py` into layers (schemas, routes/`APIRouter`, service, repository).
-- Session via FastAPI dependency injection (`Depends`, `yield`).
+- pytest setup and first API test with `TestClient`.
+- Separate test database + `app.dependency_overrides[get_session]`.
+- Tests for the full CRUD (200/201/204/404/409/422).
 
 ## Next task
 
-Day 4, step 1: move the Pydantic schemas to `schemas.py`, then introduce `get_session` with `yield` + `Depends` to remove `with Session(engine)` duplication.
+Day 5, step 1: add pytest as a dev dependency, create `tests/`, write a first test that doesn't write to the DB (e.g. POST with invalid email → 422).
 
 Proceed one step at a time and wait for the student's response before continuing.
 
