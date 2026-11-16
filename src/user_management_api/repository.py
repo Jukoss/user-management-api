@@ -5,7 +5,7 @@ from user_management_api.models import User
 from user_management_api.schemas import UserCreate
 
 
-def get_all_users(session: Session) -> list[User]:
+def list_users(session: Session) -> list[User]:
     return session.scalars(select(User)).all()
 
 
@@ -27,3 +27,8 @@ def update_user_by_id(session: Session, user: User, user_data: UserCreate) -> Us
     session.commit()
     session.refresh(user)
     return user
+
+
+def delete_user_by_id(session: Session, user: User) -> None:
+    session.delete(user)
+    session.commit()
