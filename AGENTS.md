@@ -68,7 +68,7 @@ When reviewing code:
 
 ## Current progress
 
-Days 1–4 are completed. Day 5 is in progress.
+Days 1–5 are completed. Day 6 is in progress.
 
 ### Day 1 — completed
 
@@ -139,16 +139,29 @@ Workflow: the student commits after each finished step; the mentor provides a re
 
 Open nit: one blank line before `def delete_user` in `service.py`; one `IntegrityError` is assumed to always mean duplicate email (true only while email is the only constraint).
 
-### Day 5 — in progress
+### Day 5 — completed
+
+- `pytest` in `[dependency-groups] dev` (`uv add --dev pytest`); run with `uv run pytest`.
+- Separate database `users_test` in the same `users-db` container.
+- `tests/conftest.py`: `test_engine` for `users_test`, `get_test_session()` (same shape as `get_session`), fixture `client`: `create_all` → `app.dependency_overrides[get_session] = get_test_session` → `yield TestClient(app)` → `dependency_overrides.clear()` → `drop_all`.
+- `tests/test_users.py`: helper `create_user(client, name="test", email="test@test.com")` returning the JSON; 10 integration tests covering list (`[]`), get, 404, 422 (`loc == ["body", "email"]`), 409 (case-insensitive email, and PUT with another user's email), update, update 404, delete 204 → 404.
+- `tests/test_schemas.py`: one unit test calling `UserCreate.normalize_email(...)` directly.
+- Tooling: `uvx ruff format` and `uvx ruff check --fix` (run as two separate commands).
+
+Concepts covered: pytest discovery, plain `assert`, Arrange–Act–Assert, `TestClient`, dev dependencies, false-positive tests (invalid body masking the scenario under test — happened twice; rule: everything valid except the one thing being tested; don't adjust asserts to match actual output), ERROR (fixture/setup) vs FAILED (assert), fixtures with `yield` (teardown runs even if the test fails), `conftest.py`, `dependency_overrides` leaking via the global `app`, flaky tests from shared dev data, default parameter values, mutation testing idea, unit vs integration tests (the student initially thought the API tests were unit tests), why integration tests catch Day 3 bugs that mocks wouldn't.
+
+Open: `test_normalize_email` calls the classmethod directly — it would still pass if `@field_validator` were removed; suggested testing through `UserCreate(name=..., email=...).email` instead.
+
+### Day 6 — in progress
 
 Not yet done:
-- pytest setup and first API test with `TestClient`.
-- Separate test database + `app.dependency_overrides[get_session]`.
-- Tests for the full CRUD (200/201/204/404/409/422).
+- `DATABASE_URL` (and test DB URL) from environment variables instead of hardcoded strings.
+- `Dockerfile` for the app; `compose.yaml` with app + PostgreSQL.
+- GitHub repository and GitHub Actions workflow running `ruff` and `pytest` on push.
 
 ## Next task
 
-Day 5, step 1: add pytest as a dev dependency, create `tests/`, write a first test that doesn't write to the DB (e.g. POST with invalid email → 422).
+Day 6, step 1: read `DATABASE_URL` from an environment variable (`os.environ`), keeping a local default; explain env vars via `.env` / `import.meta.env` analogies.
 
 Proceed one step at a time and wait for the student's response before continuing.
 
