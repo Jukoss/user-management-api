@@ -1,3 +1,5 @@
+import os
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -7,7 +9,7 @@ from user_management_api.database import get_session
 from user_management_api.main import app
 from user_management_api.models import Base
 
-TEST_DATABASE_URL = "postgresql+psycopg://app:app@localhost:5432/users_test"
+TEST_DATABASE_URL = os.environ["TEST_DATABASE_URL"]
 
 test_engine = create_engine(TEST_DATABASE_URL)
 
