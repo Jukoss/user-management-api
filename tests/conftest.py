@@ -1,7 +1,7 @@
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from fastapi.testclient import TestClient
 
 from user_management_api.database import get_session
 from user_management_api.main import app
